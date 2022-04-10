@@ -38,21 +38,28 @@ def main(params):
     df.tpep_pickup_datetime = pd.to_datetime(df.tpep_pickup_datetime)
     df.tpep_dropoff_datetime = pd.to_datetime(df.tpep_dropoff_datetime)
 
-    # create the table (data schema) with only the columns name to the connected database
+    # create the table (data schema) with only the column names to the connected database
     df.head(n=0).to_sql(name=table_name, con=engine, if_exists='replace')
 
     # insert the 1st chunk (100000 records) to the created table
     df.to_sql(name=table_name, con=engine, if_exists='append')
 
-    while True:
+    # insert the rest of the chunks
+    for df_chunk in df_iter:
         t_start = time()
-        df = next(df_iter)
-        df.tpep_pickup_datetime = pd.to_datetime(df.tpep_pickup_datetime)
-        df.tpep_dropoff_datetime = pd.to_datetime(df.tpep_dropoff_datetime)
-        df.to_sql(name=table_name, con=engine, if_exists='append')
+
+        df_chunk.tpep_pickup_datetime = pd.to_datetime(
+            df_chunk.tpep_pickup_datetime)
+        df_chunk.tpep_dropoff_datetime = pd.to_datetime(
+            df_chunk.tpep_dropoff_datetime)
+
+        df_chunk.to_sql(name=table_name, con=engine, if_exists='append')
 
         t_end = time()
-        print('inserted another chunck..., took %.3f seconds' % (t_end-t_start))
+
+        print(f'inserted another chunck..., took {t_end-t_start:.3f} seconds')
+
+    print(f"All data of table {table_name} have been inserted successfully.")
 
 
 if __name__ == '__main__':
